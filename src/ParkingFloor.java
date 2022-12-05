@@ -12,7 +12,7 @@ public class ParkingFloor {
     @Getter
     private String floorID;
     @Getter
-    private Map<SpotType, Deque<ParkingSpot>> spots = new HashMap<>();
+    private static Map<SpotType, Deque<ParkingSpot>> spots = new HashMap<>();
     private Map<String, ParkingSpot> usedSpot = new HashMap<>();
 
     public ParkingFloor(String id) {
@@ -53,5 +53,24 @@ public class ParkingFloor {
 
     public synchronized ParkingSpot getSpot(VehicleType vehicleType) {
         if(!canPark(getSpotType(vehicleType))) return null;
+
+        SpotType spotType = getSpotType(vehicleType);
+        ParkingSpot spot = spots.get(spotType).poll();
+        usedSpot.put(spot.getLotID(), spot);
+        return spot;
+    }
+
+    public ParkingSpot vacateSpot(String spotID) {
+        ParkingSpot spot = usedSpot.remove(spotID);
+        if(spot != null) {
+            spot.freeSpot();
+            spots.get(spot.getSpotType()).addFirst(spot);
+            return spot;
+        }
+        return null;
+    }
+
+    public static boolean canPark(SpotType spotType) {
+        return spots.get(spotType).size() > 0;
     }
 }
